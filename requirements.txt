@@ -1,0 +1,10 @@
+ipython
+numpy
+glob:7.2.0
+scipy
+pyWavelets
+matplotlib
+pillow
+sklearn
+tqdm
+pandas
