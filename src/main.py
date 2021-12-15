@@ -19,13 +19,17 @@ if __name__ == "__main__":
         nat_dirlist = Natural Face Images
         """
 
+    print('Loading StyleGAN images')
     ff_dirlist = np.array(sorted(glob(r'..\assets\stylegan3_generated\*.PNG')))[:10]
     ff_device = np.array([os.path.split(i)[1].rsplit('0', 1)[0] for i in ff_dirlist])[:10]
+    print('Done!')
 
+    print('Loading natural images')
     nat_dirlist = np.array(sorted(glob(r'..\assets\original\train\cat\*.PNG')))[:10]
     nat_device = np.array([os.path.split(i)[1].split('0', 1)[0] for i in nat_dirlist])[:10]
+    print('Done!')
 
-    print('Computing fingerprints for StyleGAN psi=1.0')
+    print('Computing fingerprints for StyleGAN')
     fingerprint_stylegan_psi1 = sorted(np.unique(ff_device))
     ff = []
     for device in fingerprint_stylegan_psi1:
@@ -48,7 +52,7 @@ if __name__ == "__main__":
     ff = np.stack(ff, 0)
     print(ff.shape)
 
-    print('Computing fingerprints')
+    print('Computing fingerprints for natural')
     normal_device = sorted(np.unique(nat_device))
     nat = []
     for device in normal_device:
@@ -102,20 +106,22 @@ if __name__ == "__main__":
     nat_nat_corr = pd.DataFrame()
     ff_ff_corr = pd.DataFrame()
 
-    '''Correlation natural - fake'''
-    nat_ff_corr = pd.DataFrame(prnu.aligned_cc(ff, nat_w[[0]])['ncc'])
-    nat_ff_corr.columns = ["Corr Value"]
+    '''Correlation fake - fake'''
+    print('Computing correlation fake - fake')
+    ff_ff_corr = pd.DataFrame(prnu.aligned_cc(ff, ff_w[[0]])['ncc'])
+    ff_ff_corr.columns = ["Corr Value"]
     for i in range(500):
-        b = pd.DataFrame(prnu.aligned_cc(ff, nat_w[[i]])['ncc'])
-        nat_ff_corr = nat_ff_corr.append(b)
+        b = pd.DataFrame(prnu.aligned_cc(ff, ff_w[[i]])['ncc'])
+        ff_ff_corr = ff_ff_corr.append(b)
 
-    nat_ff_corr = nat_ff_corr.iloc[1:]
-    nat_ff_corr.columns = ["Corr_Value", "Sıl"]
-    nat_ff_corr.drop("Sıl", inplace=True, axis=1)
-    nat_ff_corr.Corr_Value.hist()
-    print("Correlation mean of Natural - Fake Pic", nat_ff_corr.Corr_Value.mean())
+    ff_ff_corr = ff_ff_corr.iloc[1:]
+    ff_ff_corr.columns = ["Corr_Value", "Sıl"]
+    ff_ff_corr.drop("Sıl", inplace=True, axis=1)
+    ff_ff_corr.Corr_Value.hist()
+    print("Correlation mean of Natural - Natural Pic", ff_ff_corr.Corr_Value.mean())
 
     '''Correlation natural - natural'''
+    print('Computing correlation natural - natural')
     nat_nat_corr = pd.DataFrame(prnu.aligned_cc(nat, nat_w[[0]])['ncc'])
     nat_nat_corr.columns = ["Corr Value"]
     for i in range(500):
@@ -128,18 +134,19 @@ if __name__ == "__main__":
     nat_nat_corr.Corr_Value.hist()
     print("Correlation mean of Natural - Natural Pic", nat_nat_corr.Corr_Value.mean())
 
-    '''Correlation fake - fake'''
-    ff_ff_corr = pd.DataFrame(prnu.aligned_cc(ff, ff_w[[0]])['ncc'])
-    ff_ff_corr.columns = ["Corr Value"]
+    '''Correlation natural - fake'''
+    print('Computing correlation natural - fake')
+    nat_ff_corr = pd.DataFrame(prnu.aligned_cc(ff, nat_w[[0]])['ncc'])
+    nat_ff_corr.columns = ["Corr Value"]
     for i in range(500):
-        b = pd.DataFrame(prnu.aligned_cc(ff, ff_w[[i]])['ncc'])
-        ff_ff_corr = ff_ff_corr.append(b)
+        b = pd.DataFrame(prnu.aligned_cc(ff, nat_w[[i]])['ncc'])
+        nat_ff_corr = nat_ff_corr.append(b)
 
-    ff_ff_corr = ff_ff_corr.iloc[1:]
-    ff_ff_corr.columns = ["Corr_Value", "Sıl"]
-    ff_ff_corr.drop("Sıl", inplace=True, axis=1)
-    ff_ff_corr.Corr_Value.hist()
-    print("Correlation mean of Natural - Natural Pic", ff_ff_corr.Corr_Value.mean())
+    nat_ff_corr = nat_ff_corr.iloc[1:]
+    nat_ff_corr.columns = ["Corr_Value", "Sıl"]
+    nat_ff_corr.drop("Sıl", inplace=True, axis=1)
+    nat_ff_corr.Corr_Value.hist()
+    print("Correlation mean of Natural - Fake Pic", nat_ff_corr.Corr_Value.mean())
 
 
 def threshold(wlet_coeff_energy_avg: np.ndarray, noise_var: float) -> np.ndarray:
