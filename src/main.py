@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import pywt
 import prnu
-import matplotlib.pyplot as plt
+import warnings
 from IPython.display import Image
 from glob import glob
 from scipy.ndimage import filters
@@ -13,21 +13,26 @@ from numpy.fft import fft2, ifft2
 from sklearn.metrics import roc_curve, auc
 from tqdm import tqdm
 
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 if __name__ == "__main__":
-    """ff_dirlist = GAN Images
-        nat_dirlist = Natural Face Images
-        """
+    ###
+    # ff_dirlist = GAN Images
+    # nat_dirlist = Natural Face Images
+    ###
+
+    # Set number of images to load
+    num_of_imgs = 10
 
     print('Loading StyleGAN images')
-    ff_dirlist = np.array(sorted(glob(r'..\assets\stylegan3_generated\*.PNG')))[:10]
-    ff_device = np.array([os.path.split(i)[1].rsplit('0', 1)[0] for i in ff_dirlist])[:10]
+    ff_dirlist = np.array(sorted(glob(r'..\assets\stylegan3_generated\*.PNG')))[:num_of_imgs]
+    ff_device = np.array([os.path.split(i)[1].rsplit('0', 1)[0] for i in ff_dirlist])[:num_of_imgs]
     print('Done!')
 
     print('Loading natural images')
-    nat_dirlist = np.array(sorted(glob(r'..\assets\original\train\cat\*.PNG')))[:10]
-    nat_device = np.array([os.path.split(i)[1].split('0', 1)[0] for i in nat_dirlist])[:10]
-    print('Done!')
+    nat_dirlist = np.array(sorted(glob(r'..\assets\original\train\cat\*.PNG')))[:num_of_imgs]
+    nat_device = np.array([os.path.split(i)[1].split('0', 1)[0] for i in nat_dirlist])[:num_of_imgs]
+    print('Done!\n')
 
     print('Computing fingerprints for StyleGAN')
     fingerprint_stylegan_psi1 = sorted(np.unique(ff_device))
@@ -75,7 +80,7 @@ if __name__ == "__main__":
     nat = np.stack(nat, 0)
     print(nat.shape)
 
-    print('Computing residuals nat_dirlist')
+    print('\nComputing residuals nat_dirlist')
 
     imgs = []
     for img_path in nat_dirlist:
@@ -101,16 +106,16 @@ if __name__ == "__main__":
     ff_w = np.stack(ff_w, 0)
     print(ff_w.shape)
 
-    '''Creating correlations'''
+    # Creating correlations
     nat_ff_corr = pd.DataFrame()
     nat_nat_corr = pd.DataFrame()
     ff_ff_corr = pd.DataFrame()
 
-    '''Correlation fake - fake'''
-    print('Computing correlation fake - fake')
+    # Correlation fake - fake
+    print('\nComputing correlation fake - fake')
     ff_ff_corr = pd.DataFrame(prnu.aligned_cc(ff, ff_w[[0]])['ncc'])
     ff_ff_corr.columns = ["Corr Value"]
-    for i in range(500):
+    for i in range(num_of_imgs):
         b = pd.DataFrame(prnu.aligned_cc(ff, ff_w[[i]])['ncc'])
         ff_ff_corr = ff_ff_corr.append(b)
 
@@ -118,13 +123,13 @@ if __name__ == "__main__":
     ff_ff_corr.columns = ["Corr_Value", "Sıl"]
     ff_ff_corr.drop("Sıl", inplace=True, axis=1)
     ff_ff_corr.Corr_Value.hist()
-    print("Correlation mean of Natural - Natural Pic", ff_ff_corr.Corr_Value.mean())
+    print("Correlation mean of Fake - Fake Pic", ff_ff_corr.Corr_Value.mean())
 
-    '''Correlation natural - natural'''
-    print('Computing correlation natural - natural')
+    # Correlation natural - natural
+    print('\nComputing correlation natural - natural')
     nat_nat_corr = pd.DataFrame(prnu.aligned_cc(nat, nat_w[[0]])['ncc'])
     nat_nat_corr.columns = ["Corr Value"]
-    for i in range(500):
+    for i in range(num_of_imgs):
         b = pd.DataFrame(prnu.aligned_cc(nat, nat_w[[i]])['ncc'])
         nat_nat_corr = nat_nat_corr.append(b)
 
@@ -134,11 +139,11 @@ if __name__ == "__main__":
     nat_nat_corr.Corr_Value.hist()
     print("Correlation mean of Natural - Natural Pic", nat_nat_corr.Corr_Value.mean())
 
-    '''Correlation natural - fake'''
-    print('Computing correlation natural - fake')
+    # Correlation natural - fake
+    print('\nComputing correlation natural - fake')
     nat_ff_corr = pd.DataFrame(prnu.aligned_cc(ff, nat_w[[0]])['ncc'])
     nat_ff_corr.columns = ["Corr Value"]
-    for i in range(500):
+    for i in range(num_of_imgs):
         b = pd.DataFrame(prnu.aligned_cc(ff, nat_w[[i]])['ncc'])
         nat_ff_corr = nat_ff_corr.append(b)
 
@@ -147,6 +152,24 @@ if __name__ == "__main__":
     nat_ff_corr.drop("Sıl", inplace=True, axis=1)
     nat_ff_corr.Corr_Value.hist()
     print("Correlation mean of Natural - Fake Pic", nat_ff_corr.Corr_Value.mean())
+
+    print("\nPlotting graph")
+    # Import library and dataset
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+
+    sns.set(rc={'figure.figsize': (11.7, 8.27)})
+    plt.ylim(0, 160)
+
+    # Method 1: on the same Axis
+    sns.distplot(nat_ff_corr["Corr_Value"], color="blue", label="StyleGAN & Normal", bins=300)
+    sns.distplot(ff_ff_corr["Corr_Value"], color="red", label="StyleGAN3 x2", bins=300)
+    sns.distplot(nat_nat_corr["Corr_Value"], color="green", label="Normal x2", bins=300)
+    plt.legend()
+
+    plt.title('Histogram of correlation between Normal Pictures')
+    plt.xlabel('Corr_Values')
+    plt.show()
 
 
 def threshold(wlet_coeff_energy_avg: np.ndarray, noise_var: float) -> np.ndarray:
@@ -413,4 +436,3 @@ def extract_multiple_aligned(imgs: list, levels: int = 4, sigma: float = 5, proc
     K = wiener_dft(K, K.std(ddof=1)).astype(np.float32)
 
     return K
-

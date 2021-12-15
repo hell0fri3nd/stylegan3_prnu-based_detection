@@ -8,3 +8,4 @@ pillow
 sklearn
 tqdm
 pandas
+seaborn
