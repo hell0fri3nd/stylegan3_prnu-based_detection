@@ -22,15 +22,16 @@ if __name__ == "__main__":
     ###
 
     # Set number of images to load
-    num_of_imgs = 10
+    num_of_imgs = 490
 
     print('Loading StyleGAN images')
-    ff_dirlist = np.array(sorted(glob(r'..\assets\stylegan3_generated\*.PNG')))[:num_of_imgs]
+    ff_dirlist = np.array(sorted(glob(r'/content/drive/MyDrive/WIP/images/stylegan3_generated/*.png')))[:num_of_imgs]
     ff_device = np.array([os.path.split(i)[1].rsplit('0', 1)[0] for i in ff_dirlist])[:num_of_imgs]
     print('Done!')
+    print('CODICE NUOVO v3!')
 
     print('Loading natural images')
-    nat_dirlist = np.array(sorted(glob(r'..\assets\original\train\cat\*.PNG')))[:num_of_imgs]
+    nat_dirlist = np.array(sorted(glob(r'/content/drive/MyDrive/WIP/images/original/*.png')))[:num_of_imgs]
     nat_device = np.array([os.path.split(i)[1].split('0', 1)[0] for i in nat_dirlist])[:num_of_imgs]
     print('Done!\n')
 
@@ -53,6 +54,8 @@ if __name__ == "__main__":
             im_cut2 = prnu.cut_ctr(im_arr, (512, 512, 3))
             imgs += [im_cut2]
         ff += [prnu.extract_multiple_aligned(imgs, processes=1)]
+
+    print(len(ff))
 
     ff = np.stack(ff, 0)
     print(ff.shape)
@@ -159,16 +162,18 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     sns.set(rc={'figure.figsize': (11.7, 8.27)})
-    plt.ylim(0, 160)
+    plt.ylim(0, 120)
+    plt.xlim(-0.025, 0.08)
 
     # Method 1: on the same Axis
-    sns.distplot(nat_ff_corr["Corr_Value"], color="blue", label="StyleGAN & Normal", bins=300)
+    sns.distplot(nat_ff_corr["Corr_Value"], color="blue", label="StyleGAN & Real", bins=300)
     sns.distplot(ff_ff_corr["Corr_Value"], color="red", label="StyleGAN3 x2", bins=300)
-    sns.distplot(nat_nat_corr["Corr_Value"], color="green", label="Normal x2", bins=300)
+    sns.distplot(nat_nat_corr["Corr_Value"], color="green", label="Real x2", bins=300)
     plt.legend()
 
-    plt.title('Histogram of correlation between Normal Pictures')
-    plt.xlabel('Corr_Values')
+    plt.title('Histogram of correlation between Fake and Real Pictures')
+    plt.xlabel('Correlation Values')
+    plt.savefig('../corr_value_graph'+str(os.getpid())+'.png')
     plt.show()
 
 
