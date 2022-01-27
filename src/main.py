@@ -23,159 +23,193 @@ if __name__ == "__main__":
 
     # Set number of images to load
     num_of_imgs = 490
-
-    print('Loading StyleGAN images')
-    ff_dirlist = np.array(sorted(glob(r'/content/drive/MyDrive/WIP/images/stylegan3_generated/*.png')))[:num_of_imgs]
-    ff_device = np.array([os.path.split(i)[1].rsplit('0', 1)[0] for i in ff_dirlist])[:num_of_imgs]
-    print('Done!')
-    print('CODICE NUOVO v3!')
-
-    print('Loading natural images')
-    nat_dirlist = np.array(sorted(glob(r'/content/drive/MyDrive/WIP/images/original/*.png')))[:num_of_imgs]
-    nat_device = np.array([os.path.split(i)[1].split('0', 1)[0] for i in nat_dirlist])[:num_of_imgs]
-    print('Done!\n')
-
-    print('Computing fingerprints for StyleGAN')
-    fingerprint_stylegan_psi1 = sorted(np.unique(ff_device))
-    ff = []
-    for device in fingerprint_stylegan_psi1:
+    #490
+    
+    ans = input('Type "s" to compute data from images and save it, anything to retrieve data from previously saved file: ')
+    
+    if ans == "s":
+        print('Loading StyleGAN images')
+        ff_dirlist = np.array(sorted(glob(r'/content/drive/MyDrive/WIP/images/stylegan3_generated/*.png')))[:num_of_imgs]
+        ff_device = np.array([os.path.split(i)[1].rsplit('0', 1)[0] for i in ff_dirlist])[:num_of_imgs]
+        print('Done!')
+    
+        print('Loading natural images')
+        nat_dirlist = np.array(sorted(glob(r'/content/drive/MyDrive/WIP/images/original/*.png')))[:num_of_imgs]
+        nat_device = np.array([os.path.split(i)[1].split('0', 1)[0] for i in nat_dirlist])[:num_of_imgs]
+        print('Done!\n')
+    
+        print('Computing fingerprints for StyleGAN')
+        fingerprint_stylegan_psi1 = sorted(np.unique(ff_device))
+        ff = []
+        for device in fingerprint_stylegan_psi1:
+            imgs = []
+            for img_path in ff_dirlist[ff_device == device]:
+                im = Image.open(img_path)
+                # im = im.resize((2000, 3008), Image.ANTIALIAS)
+                im_arr = np.asarray(im)
+                if im_arr.dtype != np.uint8:
+                    print('Error while reading image: {}'.format(img_path))
+                    continue
+                if im_arr.ndim != 3:
+                    print('Image is not RGB: {}'.format(img_path))
+                    continue
+    
+                im_cut2 = prnu.cut_ctr(im_arr, (512, 512, 3))
+                imgs += [im_cut2]
+            ff += [prnu.extract_multiple_aligned(imgs, processes=1)]
+        
+        print(len(ff))
+        
+        ff = np.stack(ff, 0)
+        print(ff.shape)
+    
+        print('Computing fingerprints for natural')
+        normal_device = sorted(np.unique(nat_device))
+        nat = []
+        for device in normal_device:
+            imgss = []
+            for img_path in nat_dirlist[nat_device == device]:
+                im = Image.open(img_path)
+                # im = im.resize((2000, 3008), Image.ANTIALIAS)
+                im_arr = np.asarray(im)
+                if im_arr.dtype != np.uint8:
+                    print('Error while reading image: {}'.format(img_path))
+                    continue
+                if im_arr.ndim != 3:
+                    print('Image is not RGB: {}'.format(img_path))
+                    continue
+    
+                im_cut1 = prnu.cut_ctr(im_arr, (512, 512, 3))
+                imgss += [im_cut1]
+            nat += [prnu.extract_multiple_aligned(imgss, processes=1)]
+    
+        nat = np.stack(nat, 0)
+        print(nat.shape)
+    
+        print('\nComputing residuals nat_dirlist')
+    
         imgs = []
-        for img_path in ff_dirlist[ff_device == device]:
-            im = Image.open(img_path)
-            # im = im.resize((2000, 3008), Image.ANTIALIAS)
-            im_arr = np.asarray(im)
-            if im_arr.dtype != np.uint8:
-                print('Error while reading image: {}'.format(img_path))
-                continue
-            if im_arr.ndim != 3:
-                print('Image is not RGB: {}'.format(img_path))
-                continue
-
-            im_cut2 = prnu.cut_ctr(im_arr, (512, 512, 3))
-            imgs += [im_cut2]
-        ff += [prnu.extract_multiple_aligned(imgs, processes=1)]
-
-    print(len(ff))
-
-    ff = np.stack(ff, 0)
-    print(ff.shape)
-
-    print('Computing fingerprints for natural')
-    normal_device = sorted(np.unique(nat_device))
-    nat = []
-    for device in normal_device:
-        imgss = []
-        for img_path in nat_dirlist[nat_device == device]:
-            im = Image.open(img_path)
-            # im = im.resize((2000, 3008), Image.ANTIALIAS)
-            im_arr = np.asarray(im)
-            if im_arr.dtype != np.uint8:
-                print('Error while reading image: {}'.format(img_path))
-                continue
-            if im_arr.ndim != 3:
-                print('Image is not RGB: {}'.format(img_path))
-                continue
-
-            im_cut1 = prnu.cut_ctr(im_arr, (512, 512, 3))
-            imgss += [im_cut1]
-        nat += [prnu.extract_multiple_aligned(imgss, processes=1)]
-
-    nat = np.stack(nat, 0)
-    print(nat.shape)
-
-    print('\nComputing residuals nat_dirlist')
-
-    imgs = []
-    for img_path in nat_dirlist:
-        imgs += [prnu.cut_ctr(np.asarray(Image.open(img_path)), (512, 512, 3))]
-
-    pool = Pool(cpu_count())
-    nat_w = pool.map(prnu.extract_single, imgs)
-    pool.close()
-
-    nat_w = np.stack(nat_w, 0)
-    print(nat_w.shape)
-
-    print('Computing residuals ff_dirlist')
-
-    imgs = []
-    for img_path in ff_dirlist:
-        imgs += [prnu.cut_ctr(np.asarray(Image.open(img_path)), (512, 512, 3))]
-
-    pool = Pool(cpu_count())
-    ff_w = pool.map(prnu.extract_single, imgs)
-    pool.close()
-
-    ff_w = np.stack(ff_w, 0)
-    print(ff_w.shape)
-
-    # Creating correlations
-    nat_ff_corr = pd.DataFrame()
-    nat_nat_corr = pd.DataFrame()
-    ff_ff_corr = pd.DataFrame()
-
-    # Correlation fake - fake
-    print('\nComputing correlation fake - fake')
-    ff_ff_corr = pd.DataFrame(prnu.aligned_cc(ff, ff_w[[0]])['ncc'])
-    ff_ff_corr.columns = ["Corr Value"]
-    for i in range(num_of_imgs):
-        b = pd.DataFrame(prnu.aligned_cc(ff, ff_w[[i]])['ncc'])
-        ff_ff_corr = ff_ff_corr.append(b)
-
-    ff_ff_corr = ff_ff_corr.iloc[1:]
-    ff_ff_corr.columns = ["Corr_Value", "Sıl"]
-    ff_ff_corr.drop("Sıl", inplace=True, axis=1)
-    ff_ff_corr.Corr_Value.hist()
-    print("Correlation mean of Fake - Fake Pic", ff_ff_corr.Corr_Value.mean())
-
-    # Correlation natural - natural
-    print('\nComputing correlation natural - natural')
-    nat_nat_corr = pd.DataFrame(prnu.aligned_cc(nat, nat_w[[0]])['ncc'])
-    nat_nat_corr.columns = ["Corr Value"]
-    for i in range(num_of_imgs):
-        b = pd.DataFrame(prnu.aligned_cc(nat, nat_w[[i]])['ncc'])
-        nat_nat_corr = nat_nat_corr.append(b)
-
-    nat_nat_corr = nat_nat_corr.iloc[1:]
-    nat_nat_corr.columns = ["Corr_Value", "Sıl"]
-    nat_nat_corr.drop("Sıl", inplace=True, axis=1)
-    nat_nat_corr.Corr_Value.hist()
-    print("Correlation mean of Natural - Natural Pic", nat_nat_corr.Corr_Value.mean())
-
-    # Correlation natural - fake
-    print('\nComputing correlation natural - fake')
-    nat_ff_corr = pd.DataFrame(prnu.aligned_cc(ff, nat_w[[0]])['ncc'])
-    nat_ff_corr.columns = ["Corr Value"]
-    for i in range(num_of_imgs):
-        b = pd.DataFrame(prnu.aligned_cc(ff, nat_w[[i]])['ncc'])
-        nat_ff_corr = nat_ff_corr.append(b)
-
-    nat_ff_corr = nat_ff_corr.iloc[1:]
-    nat_ff_corr.columns = ["Corr_Value", "Sıl"]
-    nat_ff_corr.drop("Sıl", inplace=True, axis=1)
-    nat_ff_corr.Corr_Value.hist()
-    print("Correlation mean of Natural - Fake Pic", nat_ff_corr.Corr_Value.mean())
-
-    print("\nPlotting graph")
+        for img_path in nat_dirlist:
+            imgs += [prnu.cut_ctr(np.asarray(Image.open(img_path)), (512, 512, 3))]
+    
+        pool = Pool(cpu_count())
+        nat_w = pool.map(prnu.extract_single, imgs)
+        pool.close()
+    
+        nat_w = np.stack(nat_w, 0)
+        print(nat_w.shape)
+    
+        print('Computing residuals ff_dirlist')
+    
+        imgs = []
+        for img_path in ff_dirlist:
+            imgs += [prnu.cut_ctr(np.asarray(Image.open(img_path)), (512, 512, 3))]
+    
+        pool = Pool(cpu_count())
+        ff_w = pool.map(prnu.extract_single, imgs)
+        pool.close()
+    
+        ff_w = np.stack(ff_w, 0)
+        print(ff_w.shape)
+    
+        # Creating correlations
+        nat_ff_corr = pd.DataFrame()
+        nat_nat_corr = pd.DataFrame()
+        ff_ff_corr = pd.DataFrame()
+    
+        # Correlation fake - fake
+        print('\nComputing correlation fake - fake')
+        ff_ff_corr = pd.DataFrame(prnu.aligned_cc(ff, ff_w[[0]])['ncc'])
+        ff_ff_corr.columns = ["Corr Value"]
+        for i in range(num_of_imgs):
+            b = pd.DataFrame(prnu.aligned_cc(ff, ff_w[[i]])['ncc'])
+            ff_ff_corr = ff_ff_corr.append(b)
+    
+        ff_ff_corr = ff_ff_corr.iloc[1:]
+        ff_ff_corr.columns = ["Corr_Value", "Sıl"]
+        ff_ff_corr.drop("Sıl", inplace=True, axis=1)
+        ff_ff_corr.Corr_Value.hist()
+        print("Correlation mean of Fake - Fake Pic", ff_ff_corr.Corr_Value.mean())
+        
+        # Correlation natural - natural
+        print('\nComputing correlation natural - natural')
+        nat_nat_corr = pd.DataFrame(prnu.aligned_cc(nat, nat_w[[0]])['ncc'])
+        nat_nat_corr.columns = ["Corr Value"]
+        for i in range(num_of_imgs):
+            b = pd.DataFrame(prnu.aligned_cc(nat, nat_w[[i]])['ncc'])
+            nat_nat_corr = nat_nat_corr.append(b)
+    
+        nat_nat_corr = nat_nat_corr.iloc[1:]
+        nat_nat_corr.columns = ["Corr_Value", "Sıl"]
+        nat_nat_corr.drop("Sıl", inplace=True, axis=1)
+        nat_nat_corr.Corr_Value.hist()
+        print("Correlation mean of Natural - Natural Pic", nat_nat_corr.Corr_Value.mean())
+    
+        # Correlation natural - fake
+        print('\nComputing correlation natural - fake')
+        nat_ff_corr = pd.DataFrame(prnu.aligned_cc(ff, nat_w[[0]])['ncc'])
+        nat_ff_corr.columns = ["Corr Value"]
+        for i in range(num_of_imgs):
+            b = pd.DataFrame(prnu.aligned_cc(ff, nat_w[[i]])['ncc'])
+            nat_ff_corr = nat_ff_corr.append(b)
+    
+        nat_ff_corr = nat_ff_corr.iloc[1:]
+        nat_ff_corr.columns = ["Corr_Value", "Sıl"]
+        nat_ff_corr.drop("Sıl", inplace=True, axis=1)
+        nat_ff_corr.Corr_Value.hist()
+        print("Correlation mean of Natural - Fake Pic", nat_ff_corr.Corr_Value.mean())
+        
+        print("Saving Data")
+        np.savetxt('nat_ff_output.txt',nat_ff_corr)
+        np.savetxt('ff_ff_output.txt',ff_ff_corr)
+        np.savetxt('nat_nat_output.txt',nat_nat_corr)
+    else:
+        ff_ff_data = '/content/drive/MyDrive/WIP/stylegan3_prnu-based_detection/ff_ff_output.txt'
+        nat_ff_data = '/content/drive/MyDrive/WIP/stylegan3_prnu-based_detection/nat_ff_output.txt'
+        nat_nat_data = '/content/drive/MyDrive/WIP/stylegan3_prnu-based_detection/nat_nat_output.txt'
+        
+        ff_ff_corr = np.loadtxt(ff_ff_data)
+        nat_ff_corr = np.loadtxt(nat_ff_data)
+        nat_nat_corr = np.loadtxt(nat_nat_data)
+    
     # Import library and dataset
+    print("\nPlotting graph")
     import seaborn as sns
     import matplotlib.pyplot as plt
-
-    sns.set(rc={'figure.figsize': (11.7, 8.27)})
-    plt.ylim(0, 120)
-    plt.xlim(-0.025, 0.08)
-
-    # Method 1: on the same Axis
-    sns.distplot(nat_ff_corr["Corr_Value"], color="blue", label="StyleGAN & Real", bins=300)
-    sns.distplot(ff_ff_corr["Corr_Value"], color="red", label="StyleGAN3 x2", bins=300)
-    sns.distplot(nat_nat_corr["Corr_Value"], color="green", label="Real x2", bins=300)
+    plt.clf()
+    plt.xlim(-0.01, 0.1)
+    
+    sns.distplot(nat_ff_corr, label="StyleGAN3 & Real", color="red", kde=False, hist_kws=dict(alpha=1), norm_hist=True)
+    sns.distplot(ff_ff_corr, label="StyleGAN3 x2", color="darkcyan",kde=False, hist_kws=dict(alpha=0.5), norm_hist=True, bins=1800)
+    sns.distplot(nat_nat_corr, label="Real x2", color="orange",kde=False,hist_kws=dict(alpha=0.7), norm_hist=True, bins=300)
     plt.legend()
-
-    plt.title('Histogram of correlation between Fake and Real Pictures')
-    plt.xlabel('Correlation Values')
-    plt.savefig('../corr_value_graph'+str(os.getpid())+'.png')
+    plt.savefig('/content/drive/MyDrive/WIP/corr_value_MERGED_graph'+str(os.getpid())+'.png', dpi=1200)
     plt.show()
-
+    
+    plt.clf()
+    
+    sns.distplot(nat_ff_corr, label="StyleGAN3 & Real", color="red", hist_kws=dict(alpha=1), norm_hist=True)
+    plt.legend()
+    plt.savefig('/content/drive/MyDrive/WIP/nat_ff_corr_graph'+str(os.getpid())+'.png', dpi=1200)
+    plt.show()
+    
+    plt.clf()
+    plt.xlim(-0.02, 0.02)
+    
+    sns.distplot(ff_ff_corr, label="StyleGAN3 x2", color="darkcyan", hist_kws=dict(alpha=0.5), norm_hist=True, bins=1800)
+    plt.legend()
+    plt.savefig('/content/drive/MyDrive/WIP/ff_ff_corr_graph'+str(os.getpid())+'.png', dpi=1200)
+    plt.show()
+    
+    plt.clf()
+    plt.xlim(-0.02, 0.1)
+    
+    sns.distplot(nat_nat_corr, label="Real x2", color="orange", hist_kws=dict(alpha=0.7), norm_hist=True, bins=300)
+    plt.legend()
+    plt.savefig('/content/drive/MyDrive/WIP/nat_nat_corr_graph'+str(os.getpid())+'.png', dpi=1200)
+    plt.show()
+    
+    
 
 def threshold(wlet_coeff_energy_avg: np.ndarray, noise_var: float) -> np.ndarray:
     """
