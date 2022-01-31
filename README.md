@@ -10,6 +10,9 @@ To obtain a dataset containing cat images only, we filtered them using VGG16 (Co
 
 Dataset size: 490 images
 
+## Results
+Results can be seen at the following [link](https://docs.google.com/presentation/d/1cngmtWVaQjFE_XlxJ8hiBCPNrrIruyq4EXPnvQwfwR4/edit?usp=sharing)
+
 ## Reference
 _Identification of GAN images Fingerprints
 Signal, Image and Video_ - Ali Akay Mert Akkor
