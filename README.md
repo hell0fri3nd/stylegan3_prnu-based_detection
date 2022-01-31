@@ -10,7 +10,7 @@ To obtain a dataset containing cat images only, we filtered them using VGG16 (Co
 
 Dataset size: 490 images
 
-![Original](https://drive.google.com/file/d/1Om9Kav09WZY4PcnWEmbx4rHHowzS--ro/view?usp=sharing "Real image")
+![Original](https://drive.google.com/file/d/1Om9Kav09WZY4PcnWEmbx4rHHowzS--ro/preview "Real image")
 
 ![Fake](https://drive.google.com/file/d/1_Hjc1m1EiyOwh7kM4f6QyB8DlbnZFjTa/view?usp=sharing "StyleGAN3 generated")
 
