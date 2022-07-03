@@ -13,7 +13,12 @@ Dataset size: 490 images
 ## Results
 Results can be seen at the following [link](https://docs.google.com/presentation/d/1cngmtWVaQjFE_XlxJ8hiBCPNrrIruyq4EXPnvQwfwR4/edit?usp=sharing)
 
+## Project folder
+
+For the whole project folder & additional material check [here](https://drive.google.com/drive/folders/1i1uSvDs16jYILxBVMQmuoGOg3TD-tp8R?usp=sharing) 
+
 ## Reference
 _Identification of GAN images Fingerprints
 Signal, Image and Video_ - Ali Akay Mert Akkor
+
 Karras, Tero, et al. "Alias-free generative adversarial networks." _Advances in Neural Information Processing Systems_ (2021).
